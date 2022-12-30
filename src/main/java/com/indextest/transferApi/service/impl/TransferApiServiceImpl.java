@@ -99,7 +99,7 @@ public class TransferApiServiceImpl implements TransferApiService {
                 if (accountNumberIsValid(bankAccountValidationRequest.getAccountNumber())) {
 
                     AccountNameEnquiryResponse enquiryResponse = doAccountEnquiry(bankAccountValidationRequest);
-                    if(enquiryResponse!=null){
+                    if (enquiryResponse != null) {
                         response.setCode("00");
                         response.setDescription("Account name enquiry successful");
                         response.setResponseContent(new ArrayList<>((Collection) enquiryResponse));
@@ -203,7 +203,7 @@ public class TransferApiServiceImpl implements TransferApiService {
 
                     //Send request
                     try {
-                        sendPostRequestApache(url, payload);
+                        String transferResponse = sendPostRequestApache(url, payload);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

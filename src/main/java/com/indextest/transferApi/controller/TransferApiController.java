@@ -1,5 +1,6 @@
 package com.indextest.transferApi.controller;
 
+import com.indextest.transferApi.payload.request.TransferRequest;
 import com.indextest.transferApi.payload.response.APIResponse;
 import com.indextest.transferApi.payload.request.BankAccountValidationRequest;
 import com.indextest.transferApi.service.TransferApiService;
@@ -22,6 +23,13 @@ public class TransferApiController {
     private APIResponse validateBankAccount(@RequestHeader("Authorization") String apiKey, @RequestBody
     BankAccountValidationRequest bankAccountValidationRequest) {
         return transferApiService.validateBankAccount(apiKey, bankAccountValidationRequest);
+    }
+
+
+    @RequestMapping(value = "doNIPTransfer", method = RequestMethod.POST)
+    private APIResponse doNipTransfer(@RequestHeader("Authorization") String apiKey, @RequestBody
+    TransferRequest transferRequest) {
+        return transferApiService.handleTransferRequest(apiKey, transferRequest);
     }
 
 }
