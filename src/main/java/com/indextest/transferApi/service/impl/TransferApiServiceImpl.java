@@ -207,10 +207,13 @@ public class TransferApiServiceImpl implements TransferApiService {
         return false;
     }
 
+    @Override
     public APIResponse handleTransferRequest(String key, TransferRequest transferRequest) {
         APIResponse response = new APIResponse();
         String url = "https://api.flutterwave.com/v3/transfers";
 
+        Gson gson = new Gson();
+        APICall apiCall = saveAPIRequest(transferRequest, gson);
 
         if (keyIsValid(key)) {
             //Validate request body....
@@ -223,15 +226,15 @@ public class TransferApiServiceImpl implements TransferApiService {
                     externalTransferRequest.setNarration(transferRequest.getNarration());
                     externalTransferRequest.setBeneficiaryAccountName("");
 
-
-                    Gson gson = new Gson();
                     String payload = gson.toJson(externalTransferRequest);
+
 
                     //Send request
                     try {
                         String transferResponse = sendPostRequestApache(url, payload);
 
                         //TODO: Parse response and update transaction status
+                        // updateRequest(gson, transferResponse);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
