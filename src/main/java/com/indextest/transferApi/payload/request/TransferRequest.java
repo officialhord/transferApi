@@ -12,5 +12,6 @@ public class TransferRequest {
     private String narration;
     private String beneficiaryAccountNumber;
     private String beneficiaryBankCode;
+    private String callBackUrl;
 
 }

@@ -1,10 +1,12 @@
 package com.indextest.transferApi.model;
 
 import lombok.Data;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import java.util.UUID;
 
 
 @Data
@@ -12,8 +14,12 @@ import javax.persistence.Id;
 public class NIPBanks {
 
     @Id
-    @GeneratedValue()
-    private long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    private UUID id;
     private String bankName;
     private String nipCode;
 

@@ -14,7 +14,6 @@ public class ExternalTransferRequest {
     private String beneficiaryAccountName;
     private String beneficiaryBankCode;
     private String transactionReference;
-    private String maxRetryAttempt;
     private String callBackUrl;
 
 }
