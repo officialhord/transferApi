@@ -1,6 +1,7 @@
 package com.indextest.transferApi.service.impl;
 
 import com.google.gson.Gson;
+import com.indextest.transferApi.model.APICall;
 import com.indextest.transferApi.model.NIPBanks;
 import com.indextest.transferApi.payload.request.BankAccountValidationRequest;
 import com.indextest.transferApi.payload.request.ExternalTransferRequest;
@@ -8,7 +9,9 @@ import com.indextest.transferApi.payload.request.TransferRequest;
 import com.indextest.transferApi.payload.response.APIResponse;
 import com.indextest.transferApi.payload.response.AccountNameEnquiryResponse;
 import com.indextest.transferApi.payload.response.BanksResponse;
-import com.indextest.transferApi.repo.NIPBanksRepo;
+import com.indextest.transferApi.repo.APICallRepository;
+import com.indextest.transferApi.repo.NIPBanksRepository;
+import com.indextest.transferApi.repo.NIPTransferRequestsRepository;
 import com.indextest.transferApi.service.TransferApiService;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -25,6 +28,7 @@ import org.springframework.util.ObjectUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
@@ -39,10 +43,15 @@ public class TransferApiServiceImpl implements TransferApiService {
     @Value("${paystackSecretKey}")
     private String paystackKey;
     @Autowired
-    private NIPBanksRepo banksRepo;
+    private NIPBanksRepository banksRepo;
+    @Autowired
+    private NIPTransferRequestsRepository nipTransferRequestsRepository;
+    @Autowired
+    private APICallRepository apiCallRepository;
 
     @Override
     public APIResponse getAllBanks(String key) {
+        Gson gson = new Gson();
 
         System.out.println("Key recieved is ===> " + key);
 
@@ -57,13 +66,10 @@ public class TransferApiServiceImpl implements TransferApiService {
                     BanksResponse bankResponse = new BanksResponse();
                     bankResponse.setBankName(individualRecord.getBankName());
                     bankResponse.setNipCode(individualRecord.getNipCode());
-
                     String longCode = getLongCode(individualRecord);
                     bankResponse.setLongCode(longCode);
-
                     banksResponse.add(bankResponse);
                 });
-
                 response.setCode("00");
                 response.setDescription("Success");
                 response.setResponseContent(Collections.singletonList(banksResponse));
@@ -93,6 +99,9 @@ public class TransferApiServiceImpl implements TransferApiService {
     @Override
     public APIResponse validateBankAccount(String key, BankAccountValidationRequest bankAccountValidationRequest) {
 
+        Gson gson = new Gson();
+        APICall apiCall = saveAPIRequest(bankAccountValidationRequest, gson);
+
         APIResponse response = new APIResponse();
         if (keyIsValid(key)) {
             if (bankCodeIsValid(bankAccountValidationRequest.getBankCode())) {
@@ -103,6 +112,7 @@ public class TransferApiServiceImpl implements TransferApiService {
                         response.setCode("00");
                         response.setDescription("Account name enquiry successful");
                         response.setResponseContent(new ArrayList<>((Collection) enquiryResponse));
+
                     }
                 } else {
                     response.setCode("99");
@@ -113,11 +123,28 @@ public class TransferApiServiceImpl implements TransferApiService {
                 response.setDescription("Invalid bank code received");
             }
         }
-
+        updateRequest(gson, apiCall, response);
         return response;
     }
 
+    private void updateRequest(Gson gson, APICall apiCall, Object object) {
+        apiCall.setResponseBody(gson.toJson(object));
+        apiCall.setResponseTime(LocalDateTime.now());
+        apiCallRepository.save(apiCall);
+    }
+
+    private APICall saveAPIRequest(Object object, Gson gson) {
+        APICall apiCall = new APICall();
+        apiCall.setMethod("GET");
+        apiCall.setRequestId(UUID.randomUUID());
+        apiCall.setRequestBody(gson.toJson(object));
+        apiCall.setRequestTime(LocalDateTime.now());
+        apiCallRepository.save(apiCall);
+        return apiCall;
+    }
+
     private AccountNameEnquiryResponse doAccountEnquiry(BankAccountValidationRequest bankAccountValidationRequest) {
+
         String url = resolveUrl(bankAccountValidationRequest);
         try {
 
@@ -191,7 +218,6 @@ public class TransferApiServiceImpl implements TransferApiService {
                 if (accountNumberIsValid(transferRequest.getBeneficiaryAccountNumber())) {
                     //Create url and post body
 
-
                     ExternalTransferRequest externalTransferRequest = new ExternalTransferRequest();
                     externalTransferRequest.setAmount(transferRequest.getAmount());
                     externalTransferRequest.setNarration(transferRequest.getNarration());
@@ -204,6 +230,8 @@ public class TransferApiServiceImpl implements TransferApiService {
                     //Send request
                     try {
                         String transferResponse = sendPostRequestApache(url, payload);
+
+                        //TODO: Parse response and update transaction status
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -218,7 +246,7 @@ public class TransferApiServiceImpl implements TransferApiService {
     public APIResponse handleGetTransactionStatus(String key) {
         APIResponse response = new APIResponse();
         if (keyIsValid(key)) {
-
+            //TODO: Complete logic and sending request to Partner API
         }
         return response;
     }
